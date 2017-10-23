@@ -6,8 +6,9 @@
     <div class="planner-column first">
         <h2>To do ({{ todo_number }})</h2>
         <div class=list>
-            <li v-for="todo in todos">
+            <li v-for="(todo, i) in todos">
               {{ todo.text }}
+              <button class="right" v-on:click="todo_move(i)">-></button>
             </li>
             <textarea v-on:keyup.enter="add_item(1, $event)" v-model="new_todo" placeholder="Add a task"></textarea>
         </div>
@@ -15,8 +16,10 @@
     <div class="planner-column second">
         <h2>Wip ({{ wip_number }})</h2>
         <div class=list>
-            <li v-for="wip in wips">
+            <li v-for="(wip, i) in wips">
               {{ wip.text }}
+              <button class="left" v-on:click="wip_move(i, 0)"><-</button>
+              <button class="right" v-on:click="wip_move(i, 1)">-></button>
             </li>
             <textarea v-on:keyup.enter="add_item(2, $event)" v-model="new_wip" placeholder="Add a task"></textarea>
        
@@ -25,10 +28,11 @@
     <div class="planner-column third">
         <h2>Done ({{ done_number }})</h2>
         <div class=list>
-            <li v-for="done in dones">
+            <li v-for="(done, i) in dones">
               {{ done.text }}
+              <button v-on:click="done_move(i)"><-</button>
             </li>
-            <textarea v-on:keyup.enter="add_item(3, $event)" v-model="new_done" placeholder="Add a task"></textarea>
+            <textarea class="left" v-on:keyup.enter="add_item(3, $event)" v-model="new_done" placeholder="Add a task"></textarea>
        </div>    
     </div>
 </div>
@@ -73,8 +77,23 @@ new Vue({
                     this.done_number++
                     this.dones.push({ text: event.target.value })
                     this.new_done = ''
-                }
-                
+                }                
+            },
+            todo_move: function(id) {
+                 this.wips.push(this.todos[id])
+                 this.todos.splice(id, 1)               
+            },
+            wip_move: function(id, direction) {
+                 if (direction == 0) {
+                     this.todos.push(this.wips[id])
+                 } else {
+                     this.dones.push(this.wips[id])            
+                 }
+                 this.wips.splice(id, 1)   
+            },
+            done_move: function(id) {
+                this.wips.push(this.dones[id]) 
+                this.dones.splice(id, 1)   
             }
         }
     });
@@ -121,6 +140,7 @@ h2 {
     list-style: none;
     margin-bottom: 15px;
     padding: 10px;
+    position: relative;
     
 }   
 .planner-column textarea {
@@ -134,5 +154,15 @@ h2 {
     resize: none;
     font-size: 14px;
     color: #6b7588;
+}
+.planner-column button {
+    position: absolute;
+    right: 0px;
+    bottom: 0px;
+}
+.planner-column button.left {
+    position: absolute;
+    right: 40px;
+    bottom: 0px;
 }
 </style>
