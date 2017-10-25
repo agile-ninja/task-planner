@@ -170,4 +170,7 @@ export default {
     right: 40px;
     bottom: 0px;
 }
+.dragArea {
+    min-height: 10px;
+}
 </style>
