@@ -1,25 +1,27 @@
 <template>
   <div id="task-planner">
+      
     <h1>Ninja Task Planner</h1>
+    
 
     <div class="planner-column first">
         <h2>To do ({{ todo_number }})</h2>
         <div class=list>
-            <li v-for="(todo, i) in todos">
-              {{ todo.text }}
-              <button class="right" v-on:click="todo_move(i)">-></button>
-            </li>
+            <draggable v-model="todos" class="dragArea" :options="{group:'task'}">
+              <li v-for="todo in todos">{{todo.text}}</li>
+            </draggable>
+
+            
             <textarea v-on:keyup.enter="add_item(1, $event)" v-model="new_todo" placeholder="Add a task"></textarea>
         </div>
     </div>
     <div class="planner-column second">
         <h2>Wip ({{ wip_number }})</h2>
         <div class=list>
-            <li v-for="(wip, i) in wips">
-              {{ wip.text }}
-              <button class="left" v-on:click="wip_move(i, 0)"><-</button>
-              <button class="right" v-on:click="wip_move(i, 1)">-></button>
-            </li>
+            <draggable v-model="wips" class="dragArea" :options="{group:'task'}">
+              <li v-for="wip in wips">{{wip.text}}</li>
+            </draggable>
+           
             <textarea v-on:keyup.enter="add_item(2, $event)" v-model="new_wip" placeholder="Add a task"></textarea>
        
         </div>
@@ -27,19 +29,27 @@
     <div class="planner-column third">
         <h2>Done ({{ done_number }})</h2>
         <div class=list>
-            <li v-for="(done, i) in dones">
-              {{ done.text }}
-              <button v-on:click="done_move(i)"><-</button>
-            </li>
+            <draggable v-model="dones" class="dragArea" :options="{group:'task'}">
+              <li v-for="done in dones">{{done.text}}</li>
+            </draggable>
+            
+           
             <textarea class="left" v-on:keyup.enter="add_item(3, $event)" v-model="new_done" placeholder="Add a task"></textarea>
        </div>    
     </div>
+
 </div>
+
 </template>
 
 <script>
+import draggable from 'vuedraggable'
+
 export default {
   name: 'PlannerBoard',
+  components: {
+    draggable
+  },
   data () {
     return {
       todo_number: 0,
@@ -133,7 +143,9 @@ export default {
     margin-bottom: 15px;
     padding: 3%;
     position: relative;
-    
+}
+.planner-column .list li:hover {
+    cursor: pointer;
 }   
 .planner-column textarea {
     background-color: #f7f9f9;
