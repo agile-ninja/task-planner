@@ -8,7 +8,7 @@
         <h2>To do ({{ todo_number }})</h2>
         <div class=list>
             <draggable v-model="todos" class="dragArea" :options="{group:'task'}">
-              <li v-for="todo in todos">{{todo.text}}</li>
+              <li v-for="todo in todos">{{todo.fields.text}}</li>
             </draggable>
 
             
@@ -19,7 +19,7 @@
         <h2>Wip ({{ wip_number }})</h2>
         <div class=list>
             <draggable v-model="wips" class="dragArea" :options="{group:'task'}">
-              <li v-for="wip in wips">{{wip.text}}</li>
+              <li v-for="wip in wips">{{wip.fields.text}}</li>
             </draggable>
            
             <textarea v-on:keyup.enter="add_item(2, $event)" v-model="new_wip" placeholder="Add a task"></textarea>
@@ -30,7 +30,7 @@
         <h2>Done ({{ done_number }})</h2>
         <div class=list>
             <draggable v-model="dones" class="dragArea" :options="{group:'task'}">
-              <li v-for="done in dones">{{done.text}}</li>
+              <li v-for="done in dones">{{done.fields.text}}</li>
             </draggable>
             
            
@@ -44,6 +44,7 @@
 
 <script>
 import draggable from 'vuedraggable'
+import axios from 'axios';
 
 export default {
   name: 'PlannerBoard',
@@ -55,6 +56,8 @@ export default {
       todo_number: 0,
       wip_number: 0,
       done_number: 0,
+      errors: [
+      ],
       todos: [
       ],
       wips: [  
@@ -63,9 +66,77 @@ export default {
       ],
       new_todo: '',
       new_wip: '',
-      new_done: ''
+      new_done: '',
+      fields: { text: '', status: ''}
     }
-  },methods: {
+  },
+  // Fetches posts when the component is created.
+  created() {
+    //Fetch todos
+    axios.get("https://api.airtable.com/v0/appPXztooplH2PBFw/Task?maxRecords=3&view=Grid%20view&filterByFormula=AND({status} = 'todo')",
+    { headers: { Authorization: "Bearer key9wgomi43BEzb0T" } })
+    .then(response => {
+      // JSON responses are automatically parsed.
+      this.todos = response.data.records
+      this.todo_number = this.todos.length
+      console.log(this.todos)
+    })
+    .catch(e => {
+      console.log(e)
+      this.errors.push(e)
+    })
+    //Fetch wips
+    axios.get("https://api.airtable.com/v0/appPXztooplH2PBFw/Task?maxRecords=3&view=Grid%20view&filterByFormula=AND({status} = 'wip')",
+    { headers: { Authorization: "Bearer key9wgomi43BEzb0T" } })
+    .then(response => {
+      // JSON responses are automatically parsed.
+      this.wips = response.data.records
+      this.wip_number = this.wips.length
+      console.log(this.wips)
+    })
+    .catch(e => {
+        console.log(e)
+      this.errors.push(e)
+    })
+    //Fetch dones
+    axios.get("https://api.airtable.com/v0/appPXztooplH2PBFw/Task?maxRecords=3&view=Grid%20view&filterByFormula=AND({status} = 'done')",
+    { headers: { Authorization: "Bearer key9wgomi43BEzb0T" } })
+    .then(response => {
+      // JSON responses are automatically parsed.
+      this.dones = response.data.records
+      this.done_number = this.dones.length
+      console.log(this.dones)
+    })
+    .catch(e => {
+        console.log(e)
+      this.errors.push(e)
+    })
+  },
+  watch: {
+     
+      todos: function() {   
+          this.todo_number = this.todos.length
+      },
+      wips: function() {   
+          this.wip_number = this.wips.length
+      },
+      dones: function() {   
+          this.done_number = this.dones.length
+      },
+  },
+  computed: {
+      todo_numbers: function(){
+          console.log("aprendi");
+          this.todo_number = this.todos.length
+      },
+      wip_numbers: function(){
+          this.wip_number = this.wips.length
+      },
+      done_numbers: function(){
+          this.done_number = this.dones.length
+      },
+  },
+  methods: {
       add: function(step) {
             if (step == 1) {
                 this.todo_number++
@@ -76,35 +147,37 @@ export default {
             }
         },
         add_item: function(step, event) {
+            
+            var d = new Date();
+            var n = d.toLocaleDateString(); 
+
             if (step == 1) {
-                this.todo_number++
-                this.todos.push({ text: event.target.value })
+                this.fields = { text: event.target.value, status: 'todo', creation_date: n }    
+                this.todos.push( {fields: this.fields})
                 this.new_todo = ''
             } else if (step == 2) {
-                this.wip_number++
-                this.wips.push({ text: event.target.value })
+                this.fields = { text: event.target.value, status: 'wip', creation_date: n }    
+                this.wips.push( {fields: this.fields})
                 this.new_wip = ''
             } else {
-                this.done_number++
-                this.dones.push({ text: event.target.value })
+                this.fields = { text: event.target.value, status: 'wip', creation_date: n }  
+                this.dones.push( {fields: this.fields})
                 this.new_done = ''
-            }                
-        },
-        todo_move: function(id) {
-             this.wips.push(this.todos[id])
-             this.todos.splice(id, 1)               
-        },
-        wip_move: function(id, direction) {
-             if (direction == 0) {
-                 this.todos.push(this.wips[id])
-             } else {
-                 this.dones.push(this.wips[id])            
-             }
-             this.wips.splice(id, 1)   
-        },
-        done_move: function(id) {
-            this.wips.push(this.dones[id]) 
-            this.dones.splice(id, 1)   
+            }
+            
+            //Fetch wips
+            axios.post("https://api.airtable.com/v0/appPXztooplH2PBFw/Task?api_key=key9wgomi43BEzb0T",
+            {
+                "fields": this.fields
+                
+            })
+            .then(response => {
+                console.log("exito")
+            })
+            .catch(e => {
+                console.log(e)
+                this.errors.push(e)
+            })              
         }
   }
 }
